@@ -6,10 +6,6 @@ local STANDING_HEIGHT = 72 --base height in engine --shorter players have a slig
 
 local MAX_VIEW_DISTANCE = 2000 --Max distance a combine can actually notice a player
 
--- Enemy filters
-local FILTER_PLAYER_ENEMY = "filter_player_enemy"
-local FILTER_PLAYER_NEUTRAL = "filter_player_neutral"
-
 -- 3 state variables that have a connection
 -- a player in line of sight must not be in cover and must be in the viewcone to be in LOS
 -- a player in cover only matters if they are in the view cone
