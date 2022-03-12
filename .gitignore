@@ -1,8 +1,6 @@
 
 *.ain
 *.vpk
-maps/stealth_parented_triggers_v7.los
 *.los
-*.los
-maps/stealth_parented_triggers_v7.los
 *.bin
+*.vtex
