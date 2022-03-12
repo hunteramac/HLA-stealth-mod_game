@@ -2,7 +2,7 @@
 local THINK_INTERVAL = 0.005
 local PEEK_DIST_BUFFER = 2.5 --amount a player can peak out behind cover without being seenn
 
-local STANDING_HEIGHT = 72 --base height in engine --shorter players have a slight advantage at remaining unnoticed :D
+local STANDING_HEIGHT = 72 --base height in engine --shorter players have a slight advantage at remaining unnoticed
 
 local MAX_VIEW_DISTANCE = 2000 --Max distance a combine can actually notice a player
 
@@ -10,31 +10,15 @@ local MAX_VIEW_DISTANCE = 2000 --Max distance a combine can actually notice a pl
 local FILTER_PLAYER_ENEMY = "filter_player_enemy"
 local FILTER_PLAYER_NEUTRAL = "filter_player_neutral"
 
--- Threshold to detect vars, for vision and possibly sound
---all these vars do is set threshold of movement neccessary to push the NPC into a further state of alertness
--- it doesnt limit other ways they might enter these states
--- the only effect this has is setting how much time it takes to reset to 0, it doesnt effect build rate with how calcs setup
--- long reset times make no sense and feel implausible
--- if a motion doesnnt trigger. it this threshold should almost immediately reset by time player peeks from a different direction/place
--- weird thought IF I was showing these numbers to a player
--- aas ui. for example. I would NEED to implement some detection strategy for multiple fast pings
--- a player sstanding up and down constanntly for a minnute. feels implausible.
--- BUT this is HLA. no UI. no plaayer is going to RISK standing up and down. since part of FUZINESS game, is not knowing. accurately. when enemy will notice you.
--- it would be nice to have some means to handle it. but. very fact not known CHANGES the game.
-local THRESHOLD_TO_DETECT_IDLE_SUSPICIOUS = 2
-local THRESHOLD_TO_DETECT_SUSPICIOUS_ALERT = 2
-
-local cur_detection_threshold_idle = 0
-local cur_detection_threshold_suspicious = 0
-
 -- 3 state variables that have a connection
--- a player in los must not be in cover and must be in the viewcone
+-- a player in line of sight must not be in cover and must be in the viewcone to be in LOS
 -- a player in cover only matters if they are in the view cone
 local player_in_los = false
-local player_is_enemy = false
-
 local player_in_cover = false
 
+local player_is_enemy = false
+
+-- object storage
 local marker_last_seen_player = nil
 local view_cone = nil
 
@@ -43,26 +27,12 @@ local player_in_view_cone = false
 local player_in_inner_bounds = false
 local player_in_peripheral_bounds = false
 
-
-local gaurd_state = 0
-local prev_gaurd_state = 0
--- 0 -- Idle
--- 1 -- Suspicious
--- 2 -- Alert/Combat
-
---Undertake search routine at some point in 1-2
-
-
 --perception modeling
-
 --called via auto logic onto the target_info entity that functions as this combine's marker for last known player location
 function initPlayerMarker(params)
     marker_last_seen_player = params.caller
-
     --isolate think functions to run at start with more view bounds
     thisEntity:SetThink(solveLOS,"solveLOS",THINK_INTERVAL)
-    thisEntity:SetThink(computeAwareness,"computeAwareness",THINK_INTERVAL)
-    thisEntity:SetThink(actOnStateChange,"actOnStateChange",THINK_INTERVAL)
 end
 
 function initRayShootLocation(params)
@@ -96,7 +66,7 @@ function playerExitInnerViewBounds(params)
 end
 
 --solves if the combine has LOS of the player
--- we are trying to isolate as much funnctionnality to seperate functionsn as possible. awareness will be managed in another functionn
+-- we are trying to isolate as much funnctionality to seperate functions as possible. Awareness/Behaviour will be managed in other functions
 function solveLOS()
     --debugViewBounds()
     if player_in_peripheral_bounds or player_in_inner_bounds or player_in_view_cone or player_in_left_sense_bounds or player_in_right_sense_bounds then
@@ -141,7 +111,7 @@ end
 
 --uses ray traces to check if player is obscured enough
 -- returns bool. 
--- as part of testing this needs to produce an accurate annswer consistently
+-- as part of testing this needs to produce an accurate answer consistently
 -- bug note, if combine is VERY close to a wall the player can peek around and not recive a ray when they really should. implausible
 function isPlayerInCover()
     -- if the HMD litterally isnt even in the game for whatever reason (game loaded in non VR mode, very start of game breif moment headset not loaded), immediately return
@@ -198,131 +168,7 @@ function isPlayerInCover()
             end
         end
     else
-        return true -- if we hit nothing we definetly odd case. we should say the player is in cover if we hit nothing. least dangerous of the outputs
+        return true -- if we hit nothing we definetly odd case. we should say the player is in cover if we hit nothing. least dangerous of the outputs to stealth gameplay
     end
 
-end
-
---awareness modeling
-
---catch all. simply COMPUTES based on ANY information
-function computeAwareness()
-    
-    prev_gaurd_state = gaurd_state
-
-    -- I'm not sure gaurd state 2 will have any relevancy in future but it's a foundation  I know I will replace
-    --nothing to compute, awareness at max. Search and combat terminate in other ways to resume idle
-    if gaurd_state == 2 then
-        return THINK_INTERVAL
-    end
-
-    --exception. If player ends up in primary view cone it's immediate full detection
-    if player_in_los and player_in_view_cone then
-        gaurd_state = 2
-        return THINK_INTERVAL
-    end
-
-    if gaurd_state == 0 then
-        if player_in_los then
-            cur_detection_threshold_idle = cur_detection_threshold_idle + getCurrentViewBoundAwarenessBuildFactor() * THRESHOLD_TO_DETECT_IDLE_SUSPICIOUS * THINK_INTERVAL
-        else
-            cur_detection_threshold_idle = cur_detection_threshold_idle - THINK_INTERVAL;
-        end
-
-        cur_detection_threshold_idle = Clamp(cur_detection_threshold_idle,0,THRESHOLD_TO_DETECT_IDLE_SUSPICIOUS)
-
-        if cur_detection_threshold_idle == THRESHOLD_TO_DETECT_IDLE_SUSPICIOUS then
-            gaurd_state = 1
-        end
-    end
-
-    if gaurd_state == 1 then
-        if player_in_los then
-            cur_detection_threshold_suspicious = cur_detection_threshold_suspicious + getCurrentViewBoundAwarenessBuildFactor() * THRESHOLD_TO_DETECT_SUSPICIOUS_ALERT * THINK_INTERVAL
-        else
-            cur_detection_threshold_suspicious = cur_detection_threshold_suspicious - THINK_INTERVAL;
-        end
-
-        cur_detection_threshold_suspicious = Clamp(cur_detection_threshold_suspicious,0,THRESHOLD_TO_DETECT_SUSPICIOUS_ALERT)
-
-        if cur_detection_threshold_suspicious == THRESHOLD_TO_DETECT_SUSPICIOUS_ALERT then
-            gaurd_state = 2
-        end
-    end
-
-    debugAwareness()
-
-    return THINK_INTERVAL
-end
-
-function getCurrentViewBoundAwarenessBuildFactor()
-    temp = 0
-   if player_in_inner_bounds then
-        temp = 2
-   elseif player_in_peripheral_bounds then
-        temp = 1
-    end
-
-    return temp
-end
-
-function debugAwareness()
-    
-    if cur_detection_threshold_idle ~= 0 then
-        DebugDrawText(thisEntity:GetAbsOrigin() + Vector(0,-4,80), tostring(cur_detection_threshold_idle), false, THINK_INTERVAL)
-    end
-    
-    if cur_detection_threshold_suspicious ~= 0 then
-        DebugDrawText(thisEntity:GetAbsOrigin() + Vector(0,-4,85), tostring(cur_detection_threshold_suspicious), false, THINK_INTERVAL)
-    end
-
-end
-
-function actOnStateChange()
-    --bark. then act
-
-    if prev_gaurd_state ~= gaurd_state then
-
-        --transistion between idle and suspicious
-        if prev_gaurd_state == 0 and gaurd_state == 1 then
-            --bark!
-            DoEntFire(thisEntity:GetName(), "SpeakResponseConcept", "COMBINESOLDIER_HEARSUSPICIOUS", 0.0, self, self) 
-
-            --SEARCH [ISOLATABLE BEHVAUIYR, THIS JUST HEAR FOR TESTING]
-            --head towards this is just a very simple search routine. we will desire more complex ones-- 
-            --alsmot playable. just make this search a bit more convincing? No, not for just MVP, if it's good enough for triple AAA. this is fine
-            thisEntity:NpcForceGoPosition(marker_last_seen_player:GetAbsOrigin(),false, 0)
-        end
-
-        if prev_gaurd_state == 1 and gaurd_state == 2 then
-            DoEntFire(thisEntity:GetName(), "SpeakResponseConcept", "COMBINESOLDIER_FINDENEMY", 0.0, self, self)
-        end
-
-
-        prev_gaurd_state = gaurd_state
-    end
-
-
-    if gaurd_state == 2 then
-        if player_in_los and not player_is_enemy then
-            makePlayerEnemy()
-        end
-            
-        if not player_in_los and player_is_enemy then
-            makePlayerNeutral()
-        end
-    end
-
-    return THINK_INTERVAL
-end
-
---helper functions
-function makePlayerEnemy()
-    player_is_enemy = true
-    DoEntFire(thisEntity:GetName(), "SetEnemyFilter", FILTER_PLAYER_ENEMY, 0.0, self, self)
-end
-
-function makePlayerNeutral()
-    player_is_enemy = false
-    DoEntFire(thisEntity:GetName(), "SetEnemyFilter", FILTER_PLAYER_NEUTRAL, 0.0, self, self)
 end
