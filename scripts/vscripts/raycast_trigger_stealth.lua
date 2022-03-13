@@ -35,29 +35,43 @@ function initRayShootLocation(params)
     view_cone = params.caller
 end
 
---called by viewcone trigger when it detects the player (in the future, more then just a player EG downed allies, or suspicious activity/props)
-function playerEnterViewCone(params)
-    player_in_view_cone = true
+--called by viewcone trigger when it detects a flagged entity EG Player (in the future, more then just a player EG downed allies, or suspicious activity/props)
+function entityEnterViewCone(params)
+    
+    if (params.activator:IsPlayer()) then
+        player_in_view_cone = true
+    else
+        -- environment detail
+    end
 end
 
--- if player exits the trigger, we know for sure they are out of LOS
-function playerOutOfViewCone(params)
+-- if no flagged entities exist in the trigger, we know for sure player is out of LOS
+function allEntitiesOutOfViewCone(params)
     player_in_view_cone = false
 end
 
-function playerEnterPeripheralViewBounds(params)
-    player_in_peripheral_bounds = true
+-- entityEnterPeripheralViewBounds
+function entityEnterPeripheralViewBounds(params)
+    if (params.activator:IsPlayer()) then
+        player_in_peripheral_bounds = true
+    else
+        -- environment detail
+    end
 end
 
-function playerExitPeripheralViewBounds(params)
+function allEntitiesOutOfPeripheralViewBounds(params)
     player_in_peripheral_bounds = false
 end
 
-function playerEnterInnerViewBounds(params)
-    player_in_inner_bounds = true
+function entityEnterInnerViewBounds(params)
+    if (params.activator:IsPlayer()) then
+        player_in_inner_bounds = true
+    else
+        -- environment detail
+    end
 end
 
-function playerExitInnerViewBounds(params)
+function allEntitiesOutOfInnerViewBounds(params)
     player_in_inner_bounds = false
 end
 
@@ -167,4 +181,10 @@ function isPlayerInCover()
         return true -- if we hit nothing we definetly odd case. we should say the player is in cover if we hit nothing. least dangerous of the outputs to stealth gameplay
     end
 
+end
+
+--- Test case 1 fullfillment :: Object changed
+-- called when entity detects a change in environment E.G door open when it should be closed, and so on.
+function objectInLOSChanged()
+    print("")
 end
