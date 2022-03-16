@@ -1,9 +1,11 @@
---constansts
+--Legacy -- 
+-- From Spring/Summer 2021 work
+-- Contains View bounds LOS solving in addition to a unpolished behaviour system for a combine soldier entity.
+
+--constants
 local THINK_INTERVAL = 0.005
 local PEEK_DIST_BUFFER = 2.5 --amount a player can peak out behind cover without being seenn
-
 local STANDING_HEIGHT = 72 --base height in engine --shorter players have a slight advantage at remaining unnoticed :D
-
 local MAX_VIEW_DISTANCE = 2000 --Max distance a combine can actually notice a player
 
 -- Enemy filters

@@ -1,6 +1,9 @@
---constansts
+-- Currently developed worked on 'stealth script'. Built from previous LOS solver.
+-- rests on combine soldier entity, aim to solve player LOS and change behaviour and actions combine to reflect stealth gameplay goals.
+
+--constants
 local THINK_INTERVAL = 0.005
-local PEEK_DIST_BUFFER = 2.5 --amount a player can peak out behind cover without being seenn
+local PEEK_DIST_BUFFER = 2.5 --amount a player can peak out behind cover without being seen
 
 local STANDING_HEIGHT = 72 --base height in engine --shorter players have a slight advantage at remaining unnoticed
 
