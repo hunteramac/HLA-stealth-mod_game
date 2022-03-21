@@ -29,6 +29,7 @@ local player_in_peripheral_bounds = false
 --perception modeling
 --called via auto logic onto the target_info entity that functions as this combine's marker for last known player location
 function initPlayerMarker(params)
+    print(_VERSION)
     marker_last_seen_player = params.caller
     --isolate think functions to run at start with more view bounds
     thisEntity:SetThink(solveLOS,"solveLOS",THINK_INTERVAL)
