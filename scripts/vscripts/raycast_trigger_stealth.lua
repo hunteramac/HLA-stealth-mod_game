@@ -1,17 +1,21 @@
 -- Currently developed worked on 'stealth script'. Built from previous LOS solver.
 -- rests on combine soldier entity, aim to solve player LOS and change behaviour and actions combine to reflect stealth gameplay goals.
 
+-- merge these variables into a datatype - combineLOS. Pass datatype to functions
+-- look into if Lua can/if it is desirable for datatype to have functions
 --constants
+
 local THINK_INTERVAL = 0.005
 local PEEK_DIST_BUFFER = 2.5 --amount a player can peak out behind cover without being seen
-
 local STANDING_HEIGHT = 72 --base height in engine --shorter players have a slight advantage at remaining unnoticed
-
 local MAX_VIEW_DISTANCE = 2000 --Max distance a combine can actually notice a player
 
 -- 3 state variables that have a connection
 -- a player in line of sight must not be in cover and must be in the viewcone to be in LOS
 -- a player in cover only matters if they are in the view cone
+global combineLOSdt = {}
+combineLOSdt["player_in_los"] = false
+combineLOSdt["player_in_cover"] = false
 local player_in_los = false
 local player_in_cover = false
 
@@ -21,10 +25,10 @@ local player_is_enemy = false
 local marker_last_seen_player = nil
 local view_cone = nil
 
-
 local player_in_view_cone = false
 local player_in_inner_bounds = false
 local player_in_peripheral_bounds = false
+-- merge
 
 --perception modeling
 --called via auto logic onto the target_info entity that functions as this combine's marker for last known player location
